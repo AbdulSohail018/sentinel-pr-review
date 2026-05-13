@@ -19,6 +19,7 @@ class ReviewSettings:
     github_private_key: str | None = None
     github_private_key_path: str | None = None
     github_webhook_secret: str | None = None
+    github_token: str | None = None
 
     @classmethod
     def from_env(cls) -> ReviewSettings:
@@ -43,6 +44,7 @@ class ReviewSettings:
             github_private_key=os.getenv("GITHUB_PRIVATE_KEY"),
             github_private_key_path=os.getenv("GITHUB_PRIVATE_KEY_PATH"),
             github_webhook_secret=os.getenv("GITHUB_WEBHOOK_SECRET"),
+            github_token=os.getenv("GITHUB_TOKEN"),
         )
 
     def budget_for(self, agent: str) -> int:

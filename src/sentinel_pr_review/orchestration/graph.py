@@ -7,6 +7,7 @@ from sentinel_pr_review.diff import DiffContext, parse_diff, review_fingerprint
 from sentinel_pr_review.models import ReviewRequest, ReviewResponse
 from sentinel_pr_review.orchestration import nodes
 from sentinel_pr_review.orchestration.state import ReviewState
+from sentinel_pr_review.orchestration.llm_specialists import coordinator_summary
 from sentinel_pr_review.synthesis import labels, markdown_summary, recommendation, risk_level
 
 
@@ -58,6 +59,7 @@ def run_review_graph(
         github_private_key=settings.github_private_key,
         github_private_key_path=settings.github_private_key_path,
         github_webhook_secret=settings.github_webhook_secret,
+        github_token=settings.github_token,
     )
     context: DiffContext = parse_diff(request.diff)
     state: ReviewState = {
@@ -82,11 +84,13 @@ def run_review_graph(
         and not item.needs_human_review
     ]
     human_queue = [item for item in findings if item.needs_human_review]
+    summary, coordinator_usage = coordinator_summary(final_state, findings)
+    final_state["token_usage"] += coordinator_usage
     cost_usd = round(final_state["token_usage"] * settings.cost_per_token_usd, 4)
     fingerprint = review_fingerprint(request.title, request.description, request.diff, request.seed)
 
     return ReviewResponse(
-        pr_summary=f"{request.title} modifies {len(context.files)} file(s).",
+        pr_summary=summary,
         risk_assessment=risk_level(findings),
         agents=final_state["agent_runs"],
         recommendation=recommendation_value,
