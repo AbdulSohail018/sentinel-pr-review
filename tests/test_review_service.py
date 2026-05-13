@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 
 from sentinel_pr_review.api import app
 from sentinel_pr_review.models import ReviewRequest
-from sentinel_pr_review.review_service import run_review
+from sentinel_pr_review.orchestration.graph import run_review_graph
 
 SAMPLE_DIFF = """diff --git a/app/auth.py b/app/auth.py
 index 1111111..2222222 100644
@@ -16,9 +16,9 @@ index 1111111..2222222 100644
 
 
 def test_run_review_flags_security_issue() -> None:
-    response = run_review(ReviewRequest(title="Auth change", diff=SAMPLE_DIFF))
+    response = run_review_graph(ReviewRequest(title="Auth change", diff=SAMPLE_DIFF))
     assert response.recommendation in {"comment", "request_changes"}
-    assert any(finding.agent == "security" for finding in response.agents[0].findings)
+    assert any(run.agent == "security" for run in response.agents)
 
 
 def test_review_endpoint_returns_payload() -> None:
@@ -30,3 +30,14 @@ def test_review_endpoint_returns_payload() -> None:
     assert result.status_code == 200
     payload = result.json()
     assert payload["consolidated_comment_markdown"].startswith("## Sentinel PR Review")
+
+
+def test_github_webhook_ping() -> None:
+    client = TestClient(app)
+    result = client.post(
+        "/api/github/webhook",
+        headers={"X-GitHub-Event": "ping"},
+        json={"zen": "Keep it logically awesome."},
+    )
+    assert result.status_code == 200
+    assert result.json()["event"] == "ping"

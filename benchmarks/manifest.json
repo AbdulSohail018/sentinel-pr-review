@@ -1,0 +1,16 @@
+[
+  {
+    "id": "auth-secret",
+    "title": "Hard-coded API key in auth handler",
+    "diff": "diff --git a/app/auth.py b/app/auth.py\n--- a/app/auth.py\n+++ b/app/auth.py\n@@\n+api_key = \"sk-live-1234567890\"",
+    "expected_agents": ["security"],
+    "expected_labels": ["needs-security-review"]
+  },
+  {
+    "id": "loop-change",
+    "title": "Loop in hot path",
+    "diff": "diff --git a/app/worker.py b/app/worker.py\n--- a/app/worker.py\n+++ b/app/worker.py\n@@\n+while True:\n+    process_queue()",
+    "expected_agents": ["performance"],
+    "expected_labels": ["performance-concern"]
+  }
+]
