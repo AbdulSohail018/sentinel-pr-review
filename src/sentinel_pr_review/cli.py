@@ -30,6 +30,12 @@ def main(argv: list[str] | None = None) -> int:
     benchmark_parser.add_argument("--full-corpus", action="store_true")
     benchmark_parser.add_argument("--output", default=None)
 
+    harvest_parser = subparsers.add_parser("harvest", help="Harvest merged PRs into benchmark manifest")
+    harvest_parser.add_argument("--repo", required=True)
+    harvest_parser.add_argument("--limit", type=int, default=50)
+    harvest_parser.add_argument("--output", default="benchmarks/real_manifest.json")
+    harvest_parser.add_argument("--token", default=None)
+
     args = parser.parse_args(argv)
 
     if args.command == "ui":
@@ -45,6 +51,23 @@ def main(argv: list[str] | None = None) -> int:
             output_path=args.output,
         )
         json.dump(report, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+        return 0
+
+    if args.command == "harvest":
+        import os
+        from dataclasses import asdict
+        from pathlib import Path
+
+        from sentinel_pr_review.github.harvest import harvest_pull_requests
+
+        token = args.token or os.getenv("GITHUB_TOKEN")
+        if not token:
+            raise SystemExit("GITHUB_TOKEN is required for harvest")
+        cases = harvest_pull_requests(args.repo, args.limit, token)
+        payload = [asdict(case) for case in cases]
+        Path(args.output).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        json.dump({"harvested": len(payload), "output": args.output}, sys.stdout, indent=2)
         sys.stdout.write("\n")
         return 0
 
