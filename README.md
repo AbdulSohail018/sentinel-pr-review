@@ -99,6 +99,8 @@ The command prints structured JSON containing specialist findings, labels, inlin
 
 ## Review console
 
+![Sentinel PR Review Console](docs/images/review-console.png)
+
 The web UI supports:
 
 - PR title, description, and unified diff input
