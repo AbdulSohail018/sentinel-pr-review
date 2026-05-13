@@ -4,15 +4,21 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sentinel-pr-review"
-version = "0.1.0"
+version = "0.2.0"
 description = "Multi-agent PR review orchestration for GitHub"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Abdul Sohail" }]
 dependencies = [
+    "anthropic>=0.40",
     "fastapi>=0.115",
+    "langchain-core>=0.3.29",
+    "langgraph>=0.2.60",
     "pydantic>=2.8",
+    "PyGithub>=2.5",
+    "tree-sitter>=0.23.0",
+    "tree-sitter-python>=0.23.0",
     "uvicorn[standard]>=0.30",
 ]
 
