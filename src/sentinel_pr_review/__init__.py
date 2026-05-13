@@ -1,3 +1,3 @@
-"""Sentinel PR Review package."""
+from sentinel_pr_review.review_service import run_review
 
-__version__ = "0.1.0"
+__all__ = ["run_review"]

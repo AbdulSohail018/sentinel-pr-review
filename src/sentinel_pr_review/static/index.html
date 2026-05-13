@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sentinel PR Review Console</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <div>
+          <h1>Sentinel PR Review Console</h1>
+          <p>
+            Paste a pull request diff, tune review thresholds, and inspect coordinator output,
+            specialist findings, and the consolidated GitHub comment before wiring the full
+            LangGraph workflow.
+          </p>
+        </div>
+        <div class="status-pill" id="health-pill">API ready</div>
+      </header>
+
+      <nav class="tabs" aria-label="Console views">
+        <button class="tab active" data-panel="review-panel">Review Console</button>
+        <button class="tab" data-panel="architecture-panel">Architecture</button>
+      </nav>
+
+      <section class="panel review-layout active" id="review-panel">
+        <article class="card stack">
+          <h2>Pull request input</h2>
+          <label>
+            Title
+            <input id="title" value="Add webhook handler for PR synchronization" />
+          </label>
+          <label>
+            Description
+            <textarea id="description" rows="4">Adds the first pass of the GitHub webhook entrypoint and local review runner.</textarea>
+          </label>
+          <label>
+            Unified diff
+            <textarea id="diff">diff --git a/app/auth.py b/app/auth.py
+index 1111111..2222222 100644
+--- a/app/auth.py
++++ b/app/auth.py
+@@ -10,3 +10,8 @@ def login(username, password):
+     user = db.execute(f"SELECT * FROM users WHERE name='{username}'")
++    api_key = "sk-live-1234567890"
++    for row in user:
++        if row.password == password:
++            return issue_token(row)
+     return None
+</textarea>
+          </label>
+          <div class="controls">
+            <label>
+              Confidence threshold
+              <input id="confidence" type="number" min="0" max="1" step="0.01" value="0.65" />
+            </label>
+            <label>
+              Deterministic seed
+              <input id="seed" type="number" min="0" step="1" value="42" />
+            </label>
+          </div>
+          <div class="controls">
+            <button class="primary" id="run-review" type="button">Run review</button>
+            <button class="secondary" id="load-sample" type="button">Load sample diff</button>
+          </div>
+        </article>
+
+        <article class="card stack">
+          <h2>Review output</h2>
+          <div class="summary-grid" id="summary-grid">
+            <div class="metric"><span>Recommendation</span><strong id="metric-recommendation">—</strong></div>
+            <div class="metric"><span>Risk</span><strong id="metric-risk">—</strong></div>
+            <div class="metric"><span>Estimated cost</span><strong id="metric-cost">—</strong></div>
+          </div>
+          <div id="labels" class="agent-list"></div>
+          <h3>Specialist agents</h3>
+          <div id="agents" class="agent-list empty-state">Run a review to populate agent output.</div>
+          <h3>Consolidated GitHub comment</h3>
+          <pre class="markdown-preview" id="comment-preview">No review generated yet.</pre>
+        </article>
+      </section>
+
+      <section class="panel architecture-panel" id="architecture-panel">
+        <article class="card stack">
+          <h2>Supervisor-worker flow</h2>
+          <p class="architecture-copy">
+            The coordinator owns routing, token budgets, and synthesis. Specialists can ask for
+            clarification through the shared graph state before the final GitHub artifact is
+            produced.
+          </p>
+          <div class="mermaid" id="architecture-diagram">
+flowchart TB
+  subgraph Ingress["Ingress"]
+    WH["GitHub App webhook"]
+    CLI["CLI / Review Console"]
+  end
+
+  subgraph Coordinator["CoordinatorAgent"]
+    PLAN["Plan specialists"]
+    ROUTE["Route clarifications"]
+    SYNTH["Synthesize review"]
+  end
+
+  subgraph Specialists["Specialist agents"]
+    SEC["SecurityAgent\nsemgrep + CWE reasoning"]
+    PERF["PerformanceAgent\ntree-sitter + Big-O"]
+    CORR["CorrectnessAgent\ncontracts + coverage delta"]
+    STYLE["StyleAgent\nlow-priority polish"]
+  end
+
+  subgraph Delivery["Delivery"]
+    COMMENT["Consolidated review comment"]
+    INLINE["Inline comments for Critical/High"]
+    LABELS["Repository labels"]
+    COST["Cost + fingerprint metadata"]
+  end
+
+  WH --> PLAN
+  CLI --> PLAN
+  PLAN --> SEC
+  PLAN --> PERF
+  PLAN --> CORR
+  SEC --> ROUTE
+  PERF --> ROUTE
+  CORR --> ROUTE
+  ROUTE --> SYNTH
+  SYNTH --> STYLE
+  STYLE --> COMMENT
+  SYNTH --> COMMENT
+  SYNTH --> INLINE
+  SYNTH --> LABELS
+  SYNTH --> COST
+          </div>
+        </article>
+      </section>
+    </div>
+
+    <script type="module" src="/static/app.js"></script>
+  </body>
+</html>
