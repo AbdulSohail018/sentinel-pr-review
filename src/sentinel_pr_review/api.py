@@ -12,7 +12,7 @@ from sentinel_pr_review.review_service import run_review
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
-app = FastAPI(title="Sentinel PR Review", version="0.2.0")
+app = FastAPI(title="Sentinel PR Review", version="0.3.0")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.include_router(github_router)
 

@@ -16,6 +16,7 @@ class ReviewSettings:
     fallback_model: str = "claude-3-5-haiku-20241022"
     semgrep_config: str = "p/owasp-top-ten"
     github_app_id: str | None = None
+    github_private_key: str | None = None
     github_private_key_path: str | None = None
     github_webhook_secret: str | None = None
 
@@ -39,6 +40,7 @@ class ReviewSettings:
             fallback_model=os.getenv("SENTINEL_FALLBACK_MODEL", "claude-3-5-haiku-20241022"),
             semgrep_config=os.getenv("SENTINEL_SEMGREP_CONFIG", "p/owasp-top-ten"),
             github_app_id=os.getenv("GITHUB_APP_ID"),
+            github_private_key=os.getenv("GITHUB_PRIVATE_KEY"),
             github_private_key_path=os.getenv("GITHUB_PRIVATE_KEY_PATH"),
             github_webhook_secret=os.getenv("GITHUB_WEBHOOK_SECRET"),
         )
