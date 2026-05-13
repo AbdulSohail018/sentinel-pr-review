@@ -55,6 +55,7 @@ def run_review_graph(
         fallback_model=settings.fallback_model,
         semgrep_config=settings.semgrep_config,
         github_app_id=settings.github_app_id,
+        github_private_key=settings.github_private_key,
         github_private_key_path=settings.github_private_key_path,
         github_webhook_secret=settings.github_webhook_secret,
     )

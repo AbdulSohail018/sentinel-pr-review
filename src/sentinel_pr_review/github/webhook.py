@@ -8,9 +8,7 @@ from typing import Any
 from fastapi import APIRouter, Header, HTTPException, Request
 
 from sentinel_pr_review.config import ReviewSettings
-from sentinel_pr_review.github.client import build_review_payload
-from sentinel_pr_review.models import ReviewRequest
-from sentinel_pr_review.orchestration.graph import run_review_graph
+from sentinel_pr_review.github.client import process_pull_request_webhook
 
 router = APIRouter(prefix="/api/github", tags=["github"])
 
@@ -46,16 +44,4 @@ async def github_webhook(
     if action not in {"opened", "synchronize", "reopened"}:
         return {"status": "ignored", "action": action}
 
-    pull_request = payload.get("pull_request", {})
-    diff = pull_request.get("diff") or pull_request.get("body", "")
-    review = run_review_graph(
-        ReviewRequest(
-            title=pull_request.get("title", "Untitled pull request"),
-            description=pull_request.get("body", ""),
-            diff=diff or "diff --git a/README.md b/README.md\n+++ b/README.md\n@@\n+placeholder",
-            confidence_threshold=settings.confidence_threshold,
-            seed=settings.seed,
-        ),
-        settings=settings,
-    )
-    return build_review_payload(review)
+    return process_pull_request_webhook(payload, settings)
