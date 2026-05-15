@@ -1,0 +1,9 @@
+[
+  {
+    "id": "github-owner-repo-123",
+    "known_issues": ["sql", "injection"],
+    "cve_ids": ["CVE-2024-12345"],
+    "bug_references": ["GHSA-example-0000"],
+    "expected_labels": ["needs-security-review"]
+  }
+]

@@ -27,6 +27,7 @@ def harvest_pull_requests(repo_full_name: str, limit: int, token: str) -> list[B
                 known_issues=[],
                 expected_agents=[],
                 expected_labels=[],
+                github_pr=f"{repo_full_name}#{pull.number}",
             )
         )
     return cases

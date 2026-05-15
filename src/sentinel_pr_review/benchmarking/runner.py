@@ -26,6 +26,9 @@ def load_cases(manifest_path: str | None, use_full_corpus: bool) -> list[Benchma
             known_issues=item.get("known_issues", []),
             expected_agents=item.get("expected_agents", []),
             expected_labels=item.get("expected_labels", []),
+            github_pr=item.get("github_pr"),
+            cve_ids=item.get("cve_ids", []),
+            bug_references=item.get("bug_references", []),
         )
         for item in payload
     ]
@@ -35,8 +38,13 @@ def run_benchmark(
     manifest_path: str | None = None,
     use_full_corpus: bool = False,
     output_path: str | None = None,
+    ground_truth_path: str | None = None,
 ) -> dict[str, Any]:
     cases = load_cases(manifest_path, use_full_corpus)
+    if ground_truth_path:
+        from sentinel_pr_review.benchmarking.ground_truth import apply_ground_truth
+
+        cases = apply_ground_truth(cases, ground_truth_path)
     report: dict[str, Any] = {"case_count": len(cases), "baselines": {}}
 
     for baseline_name in BASELINES:

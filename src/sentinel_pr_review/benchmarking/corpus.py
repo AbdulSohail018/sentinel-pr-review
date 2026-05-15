@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
@@ -11,6 +11,9 @@ class BenchmarkCase:
     known_issues: list[str]
     expected_agents: list[str]
     expected_labels: list[str]
+    github_pr: str | None = None
+    cve_ids: list[str] = field(default_factory=list)
+    bug_references: list[str] = field(default_factory=list)
 
 
 def build_default_corpus() -> list[BenchmarkCase]:

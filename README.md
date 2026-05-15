@@ -109,30 +109,54 @@ The web UI supports:
 - Consolidated GitHub comment preview
 - Architecture tab with the same Mermaid supervisor-worker diagram
 
-The current console uses a local heuristic review engine so you can exercise the workflow before LangGraph, semgrep, tree-sitter, and GitHub App wiring are connected.
+The web UI runs the same LangGraph review pipeline as the API, including optional LLM specialists when `ANTHROPIC_API_KEY` is set.
+
+## GitHub App
+
+Production webhook setup, permissions, and environment variables are documented in [docs/github-app-deployment.md](docs/github-app-deployment.md).
+
+## Benchmarks and ground truth
+
+Harvest merged pull requests (includes `github_pr` for Copilot baseline):
+
+```bash
+sentinel-review harvest --repo owner/repo --limit 50 --output benchmarks/real_manifest.json
+```
+
+Merge CVE, GHSA, or bug labels from a sidecar JSON (map keyed by case `id`, or a list of objects with `id`):
+
+```bash
+sentinel-review annotate --manifest benchmarks/real_manifest.json --ground-truth benchmarks/ground_truth.example.json --output benchmarks/real_manifest.labeled.json
+```
+
+Run the harness with optional overlay (without writing a merged file):
+
+```bash
+sentinel-review benchmark --manifest benchmarks/real_manifest.json --ground-truth benchmarks/ground_truth.example.json --output benchmarks/results/latest.json
+```
+
+Metrics treat a case as **labeled** when `known_issues`, `cve_ids`, or `bug_references` is non-empty. Detection matches if any of those strings (or the numeric CVE suffix) appears in finding titles or evidence. The **copilot** baseline calls `gh api` for pull request reviews authored by Copilot when `github_pr` is set and the GitHub CLI is installed; otherwise it behaves like an empty review.
 
 ## Repository layout
 
 ```text
-docs/                     Architecture notes
+benchmarks/               Sample manifest, ground truth example, results
+docs/                     Architecture and GitHub App deployment
 prompts/                  Specialist and coordinator prompt specs
-src/sentinel_pr_review/   API, review service, and web console
+src/sentinel_pr_review/   API, review service, LangGraph, and web console
 tests/                    Service and API tests
 ```
 
-## Planned GitHub integration
+## GitHub integration (implemented)
 
-- GitHub App webhook on pull request open and synchronize events
-- One consolidated review comment per run
-- Inline comments only for Critical or High findings above the confidence threshold
-- Labels such as `needs-security-review` and `performance-concern`
-- Cost summary embedded in the final review comment
+- GitHub App webhook on pull request open and synchronize events (`/api/github/webhook`)
+- Consolidated PR comment, labels, inline review comments for Critical/High
+- Idempotent repost skipped when the same review fingerprint is already present
 
 ## Evaluation roadmap
 
-- Benchmark 50 real pull requests with known issues from CVE databases and historical bugs
-- Track precision, recall, false positive rate, time-to-review, and cost per PR
-- Compare against a single-agent baseline, GitHub Copilot review, and plain Claude review
+- Replace synthetic diffs with real PRs tied to CVE/GHSA databases using `annotate` and curated `ground_truth` files
+- Track precision, recall, false positive rate, time-to-review, and cost per PR across `sentinel`, `single_agent`, `plain_claude`, and `copilot` baselines
 
 ## Development
 

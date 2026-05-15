@@ -29,12 +29,21 @@ def main(argv: list[str] | None = None) -> int:
     benchmark_parser.add_argument("--manifest", default="benchmarks/manifest.json")
     benchmark_parser.add_argument("--full-corpus", action="store_true")
     benchmark_parser.add_argument("--output", default=None)
+    benchmark_parser.add_argument("--ground-truth", default=None, dest="ground_truth")
 
     harvest_parser = subparsers.add_parser("harvest", help="Harvest merged PRs into benchmark manifest")
     harvest_parser.add_argument("--repo", required=True)
     harvest_parser.add_argument("--limit", type=int, default=50)
     harvest_parser.add_argument("--output", default="benchmarks/real_manifest.json")
     harvest_parser.add_argument("--token", default=None)
+
+    annotate_parser = subparsers.add_parser(
+        "annotate",
+        help="Merge CVE/bug ground truth into a benchmark manifest JSON",
+    )
+    annotate_parser.add_argument("--manifest", required=True)
+    annotate_parser.add_argument("--ground-truth", required=True, dest="ground_truth")
+    annotate_parser.add_argument("--output", required=True)
 
     args = parser.parse_args(argv)
 
@@ -49,6 +58,7 @@ def main(argv: list[str] | None = None) -> int:
             manifest_path=None if args.full_corpus else args.manifest,
             use_full_corpus=args.full_corpus,
             output_path=args.output,
+            ground_truth_path=args.ground_truth,
         )
         json.dump(report, sys.stdout, indent=2)
         sys.stdout.write("\n")
@@ -68,6 +78,16 @@ def main(argv: list[str] | None = None) -> int:
         payload = [asdict(case) for case in cases]
         Path(args.output).write_text(json.dumps(payload, indent=2), encoding="utf-8")
         json.dump({"harvested": len(payload), "output": args.output}, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+        return 0
+
+    if args.command == "annotate":
+        from pathlib import Path
+
+        from sentinel_pr_review.benchmarking.ground_truth import annotate_manifest
+
+        count = annotate_manifest(args.manifest, args.ground_truth, args.output)
+        json.dump({"annotated_rows": count, "output": args.output}, sys.stdout, indent=2)
         sys.stdout.write("\n")
         return 0
 

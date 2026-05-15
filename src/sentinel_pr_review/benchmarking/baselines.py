@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from sentinel_pr_review import heuristics
 from sentinel_pr_review.benchmarking.corpus import BenchmarkCase
+from sentinel_pr_review.benchmarking.github_copilot import fetch_copilot_review_findings
 from sentinel_pr_review.diff import parse_diff
 from sentinel_pr_review.models import AgentRun, Finding, ReviewRequest, ReviewResponse
 from sentinel_pr_review.orchestration.graph import run_review_graph
@@ -54,11 +57,11 @@ def _response_from_findings(request: ReviewRequest, findings: list[Finding]) -> 
     )
 
 
-def run_sentinel(request: ReviewRequest) -> ReviewResponse:
+def run_sentinel(request: ReviewRequest, case: BenchmarkCase | None = None) -> ReviewResponse:
     return run_review_graph(request)
 
 
-def run_single_agent(request: ReviewRequest) -> ReviewResponse:
+def run_single_agent(request: ReviewRequest, case: BenchmarkCase | None = None) -> ReviewResponse:
     context = parse_diff(request.diff)
     threshold = request.confidence_threshold
     findings = (
@@ -69,24 +72,30 @@ def run_single_agent(request: ReviewRequest) -> ReviewResponse:
     return _response_from_findings(request, findings)
 
 
-def run_plain_claude(request: ReviewRequest) -> ReviewResponse:
+def run_plain_claude(request: ReviewRequest, case: BenchmarkCase | None = None) -> ReviewResponse:
     context = parse_diff(request.diff)
     findings = heuristics.security_findings(context, request.confidence_threshold)
     return _response_from_findings(request, findings)
 
 
-def run_copilot_stub(request: ReviewRequest) -> ReviewResponse:
+def run_copilot(request: ReviewRequest, case: BenchmarkCase | None = None) -> ReviewResponse:
+    if case and case.github_pr:
+        findings = fetch_copilot_review_findings(case.github_pr)
+        if findings:
+            return _response_from_findings(request, findings)
     return _response_from_findings(request, [])
 
 
-BASELINES = {
+BaselineFn = Callable[[ReviewRequest, BenchmarkCase | None], ReviewResponse]
+
+BASELINES: dict[str, BaselineFn] = {
     "sentinel": run_sentinel,
     "single_agent": run_single_agent,
     "plain_claude": run_plain_claude,
-    "copilot_stub": run_copilot_stub,
+    "copilot": run_copilot,
 }
 
 
 def run_baseline(name: str, case: BenchmarkCase) -> ReviewResponse:
     request = ReviewRequest(title=case.title, diff=case.diff, seed=42)
-    return BASELINES[name](request)
+    return BASELINES[name](request, case)

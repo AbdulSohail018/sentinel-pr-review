@@ -15,7 +15,7 @@ def test_benchmark_report_includes_baselines() -> None:
     assert "sentinel" in report["baselines"]
     assert "single_agent" in report["baselines"]
     assert "plain_claude" in report["baselines"]
-    assert "copilot_stub" in report["baselines"]
+    assert "copilot" in report["baselines"]
     assert "precision" in report["baselines"]["sentinel"]["metrics"]
 
 
